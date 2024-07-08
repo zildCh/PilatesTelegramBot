@@ -9,13 +9,6 @@ from user_repository import UserRepository
 from user import User
 from PIL import Image
 
-# # Замените на ваш токен
-# TOKEN = '7475676929:AAENOqRV9rdtnL-WoEb3WHTNi-oIkuq1zA4'
-# CHANNEL_ID = '@pilates_123_test'  # Замените на ваш канал
-# #ADMIN_ID = '493470036'  # Замените на ваш ID админа
-# ADMIN_ID = '1393684504'
-# USERS_FILE = 'users.json'
-
 def load_config(filename):
     with open(filename, 'r') as file:
         return json.load(file)
