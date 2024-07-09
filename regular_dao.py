@@ -42,3 +42,7 @@ class RegularPostDAO:
             cursor = self.conn.cursor()
             cursor.execute("SELECT id, message FROM series_posts")
             return cursor.fetchall()
+
+    def delete_all_posts(self):
+        with self.conn:
+            self.conn.execute("DELETE FROM series_posts")

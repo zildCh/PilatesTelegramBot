@@ -1,6 +1,7 @@
 import json
 import html
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.helpers import escape_markdown
 from telegram.ext import ContextTypes
 from user_repository import UserRepository
 with open('config.json', 'r') as file:
@@ -14,7 +15,6 @@ RegularPostRepo = RegularPostRepository()
 
 async def admin_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
-    print(f"ADMIN_ID: {ADMIN_ID}, user_id: {user_id}")
     if user_id != ADMIN_ID:
         await update.message.reply_text("Вы не являетесь администратором.")
         return
@@ -28,7 +28,7 @@ async def admin_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Теперь отправьте команду /admin_send с текстом сообщения или команду /admin_send_regular с текстом сообщения и временным интервалом")
 
 async def send_regular_posts(context: ContextTypes.DEFAULT_TYPE):
-    users = UserRepo.get_all_users()  # Предполагаем, что у вас есть функция для получения всех пользователей
+    users = UserRepo.get_all_users()
     now = datetime.now()
 
     for user in users:
@@ -45,15 +45,14 @@ async def send_regular_posts(context: ContextTypes.DEFAULT_TYPE):
 
             try:
                 if photo_id:
-                    await context.bot.send_photo(chat_id=user_id, photo=photo_id, caption=message)
+                    await context.bot.send_photo(chat_id=user_id, photo=photo_id, caption=message, parse_mode=ParseMode.HTML)
                 else:
-                    await context.bot.send_message(chat_id=user_id, text=message)
+                    await context.bot.send_message(chat_id=user_id, text=message, parse_mode=ParseMode.HTML)
             except Exception as e:
                 print(f"Не удалось отправить сообщение пользователю {user_id}: {e}")
 
 async def admin_send_regular(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
-    print(f"ADMIN_ID: {ADMIN_ID}, user_id: {user_id}")
     if user_id != ADMIN_ID:
         await update.message.reply_text("Вы не являетесь администратором.")
         return
@@ -61,10 +60,16 @@ async def admin_send_regular(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if len(context.args) < 2:
         await update.message.reply_text("Пожалуйста, укажите сообщение для рассылки и через сколько часов его отправлять.")
         return
-
+    full_text = update.message.text[len('/admin_send_regular '):]
+    # try:
+    #     hours = int(context.args[-1])
+    #     message = ' '.join(context.args[:-1])
+    # except ValueError:
+    #     await update.message.reply_text("Пожалуйста, укажите корректное количество часов.")
+    #     return
     try:
         hours = int(context.args[-1])
-        message = ' '.join(context.args[:-1])
+        message = full_text[:-len(context.args[-1])].strip()
     except ValueError:
         await update.message.reply_text("Пожалуйста, укажите корректное количество часов.")
         return
@@ -80,13 +85,12 @@ async def admin_send_regular(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text(f"Регулярное сообщение установлено на {hours} часов:")
 
     if 'photo_id' in context.user_data:
-        await update.message.reply_photo(photo=photo_id, caption=message)
+        await update.message.reply_photo(photo=photo_id, caption=message, parse_mode=ParseMode.HTML)
     else:
-        await context.bot.send_message(chat_id=user_id, text=message)
+        await context.bot.send_message(chat_id=user_id, text=message, parse_mode=ParseMode.HTML)
 
 async def admin_delete_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
-    print(f"ADMIN_ID: {ADMIN_ID}, user_id: {user_id}")
     if user_id != ADMIN_ID:
         await update.message.reply_text("Вы не являетесь администратором.")
         return
@@ -104,9 +108,16 @@ async def admin_delete_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     RegularPostRepo.delete_post(post_id)
     await update.message.reply_text(f"Сообщение с ID {post_id} успешно удалено.")
 
+async def admin_delete_all_posts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.message.from_user.id)
+    if user_id != ADMIN_ID:
+        await update.message.reply_text("Вы не являетесь администратором.")
+        return
+    RegularPostRepo.delete_all_posts()
+    await update.message.reply_text(f"Все посты удалены")
+
 async def admin_get_regular(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
-    print(f"ADMIN_ID: {ADMIN_ID}, user_id: {user_id}")
     if user_id != ADMIN_ID:
         await update.message.reply_text("Вы не являетесь администратором.")
         return
@@ -126,7 +137,6 @@ async def admin_get_regular(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def admin_send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
-    print(f"ADMIN_ID: {ADMIN_ID}, user_id: {user_id}")
     if user_id != ADMIN_ID:
         await update.message.reply_text("Вы не являетесь администратором.")
         return
@@ -135,7 +145,8 @@ async def admin_send_message(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("Пожалуйста, укажите сообщение для рассылки.")
         return
 
-    message = ' '.join(context.args)
+    message = update.message.text[len('/admin_send '):]
+
     context.user_data['message'] = message
     if 'photo_id' in context.user_data:
         photo_id = context.user_data['photo_id']
@@ -163,7 +174,7 @@ async def admin_send_message(update: Update, context: ContextTypes.DEFAULT_TYPE)
             [InlineKeyboardButton("Всем", callback_data='send_1')],
             [InlineKeyboardButton("❌ Отменить", callback_data='delete')]
         ])
-        await update.message.reply_text(text=message, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
+        await update.message.reply_text(text=message,parse_mode=ParseMode.HTML, reply_markup=reply_markup)
 
 
 
@@ -178,14 +189,14 @@ async def handle_confirmation(update: Update,context: ContextTypes.DEFAULT_TYPE)
         users = []
 
         if days_ago == 7:
-            users = UserRepo.get_recent_users()
+            users = UserRepo.get_less_then_users(7)
             print(users)
         elif days_ago == 21:
-            users = UserRepo.get_users_2_weeks_ago()
+            users = UserRepo.get_less_then_users(21)
         elif days_ago == 28:
-            users = UserRepo.get_users_3_weeks_ago()
+            users = UserRepo.get_less_then_users(28)
         elif days_ago == 29:
-            users = UserRepo.get_users_4_weeks_ago()
+            users = UserRepo.get_more_then_users(28)
         elif days_ago == 1:
             users = UserRepo.get_all_users2()
 
@@ -194,14 +205,14 @@ async def handle_confirmation(update: Update,context: ContextTypes.DEFAULT_TYPE)
             for user in users:
                 user_id = user
                 try:
-                    await context.bot.send_photo(chat_id=user_id, photo=photo_id, caption=message)
+                    await context.bot.send_photo(chat_id=user_id, photo=photo_id, parse_mode=ParseMode.HTML, caption=message)
                 except Exception as e:
                     print(f"Не удалось отправить фото пользователю {user_id}: {e}")
         else:
             for user in users:
                 user_id = user
                 try:
-                    await context.bot.send_message(chat_id=user_id, text=message)
+                    await context.bot.send_message(chat_id=user_id,parse_mode=ParseMode.HTML, text=message)
                 except Exception as e:
                     print(f"Не удалось отправить сообщение пользователю {user_id}: {e}")
 

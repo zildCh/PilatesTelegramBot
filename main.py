@@ -4,7 +4,7 @@ import json
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters , ConversationHandler
 import requests
-from admin_commands import admin_send_photo, admin_send_message, handle_confirmation, send_regular_posts, admin_send_regular, admin_get_regular, admin_delete_post
+from admin_commands import admin_send_photo, admin_send_message, handle_confirmation, send_regular_posts, admin_send_regular, admin_get_regular, admin_delete_post, admin_delete_all_posts
 from user_repository import UserRepository
 from user import User
 from PIL import Image
@@ -127,6 +127,7 @@ def main():
 
     application.add_handler(CommandHandler("admin_send_regular", admin_send_regular))
     application.add_handler(CommandHandler("admin_delete_post", admin_delete_post))
+    application.add_handler(CommandHandler("admin_delete_all_posts", admin_delete_all_posts))
     application.add_handler(CommandHandler("admin_get_regular", admin_get_regular))  # Добавляем обработчик команды
     application.add_handler(CallbackQueryHandler(handle_confirmation))
 

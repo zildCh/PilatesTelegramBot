@@ -16,17 +16,11 @@ class UserRepository:
     def get_all_users(self):
         return self.dao.get_all_users()
 
-    def get_recent_users(self):
-        return self.dao.get_users_by_less_join_date(7)
+    def get_less_then_users(self, days):
+        return self.dao.get_users_by_less_join_date(days)
 
-    def get_users_2_weeks_ago(self):
-        return self.dao.get_users_by_less_join_date(21)
-
-    def get_users_3_weeks_ago(self):
-        return self.dao.get_users_by_less_join_date(28)
-
-    def get_users_4_weeks_ago(self):
-        return self.dao.get_users_by_more_join_date(28)
+    def get_more_then_users(self, days):
+        return self.dao.get_users_by_more_join_date(days)
 
     def delete_user(self, user_id):
         self.dao.delete_user(user_id)

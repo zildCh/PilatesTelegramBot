@@ -16,5 +16,8 @@ class RegularPostRepository:
     def delete_post(self, post_id):
         self.dao.delete_post(post_id)
 
+    def delete_all_posts(self):
+        self.dao.delete_all_posts()
+
     def get_all_posts(self):
         return self.dao.get_all_posts()
