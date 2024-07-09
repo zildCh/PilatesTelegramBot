@@ -61,12 +61,6 @@ async def admin_send_regular(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("Пожалуйста, укажите сообщение для рассылки и через сколько часов его отправлять.")
         return
     full_text = update.message.text[len('/admin_send_regular '):]
-    # try:
-    #     hours = int(context.args[-1])
-    #     message = ' '.join(context.args[:-1])
-    # except ValueError:
-    #     await update.message.reply_text("Пожалуйста, укажите корректное количество часов.")
-    #     return
     try:
         hours = int(context.args[-1])
         message = full_text[:-len(context.args[-1])].strip()

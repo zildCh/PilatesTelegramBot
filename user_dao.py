@@ -3,7 +3,7 @@ from user import User
 from datetime import datetime, timedelta
 
 class UserDAO:
-    def __init__(self, db_file='database.db'):
+    def __init__(self, db_file="/app/data/database.db"):
         self.conn = sqlite3.connect(db_file)
         self.create_table()
 
