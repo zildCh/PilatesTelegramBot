@@ -1,0 +1,12 @@
+FROM alpine:latest
+
+RUN apk add --no-cache bash sshpass openssh dos2unix
+
+COPY backup.sh /app/backup.sh
+RUN dos2unix /app/backup.sh
+RUN chmod +x /app/backup.sh
+
+# Установите cron и создайте задание для бэкапа
+RUN echo "0 0 * * * /app/backup.sh" > /etc/crontabs/root
+
+CMD ["crond", "-f", "-d", "8"]
