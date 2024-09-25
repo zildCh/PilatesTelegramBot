@@ -12,4 +12,6 @@ COPY . /app
 # Создание volume для базы данных
 VOLUME ["/app/data"]
 
+COPY database.db /app/data/
+
 CMD ["python", "main.py"]

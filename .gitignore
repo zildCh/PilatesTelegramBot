@@ -1,3 +1,5 @@
 config.json
 users.json
-database.db
+*.db
+*.json
+*.mp4

@@ -7,6 +7,6 @@ RUN dos2unix /app/backup.sh
 RUN chmod +x /app/backup.sh
 
 # Установите cron и создайте задание для бэкапа
-RUN echo "0 0 * * * /app/backup.sh" > /etc/crontabs/root
+RUN echo "0 0,12 * * * /app/backup.sh" > /etc/crontabs/root
 
 CMD ["crond", "-f", "-d", "8"]
