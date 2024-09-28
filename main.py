@@ -4,7 +4,10 @@ import json
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters , ConversationHandler
 import requests
-from admin_commands import admin_send_photo,admin_send_video, admin_send_message, handle_confirmation, send_regular_posts, admin_send_regular, admin_get_regular, admin_delete_post, admin_delete_all_posts
+from admin_commands import admin_send_photo,admin_send_video, admin_send_message, \
+    handle_confirmation, send_regular_posts, admin_send_regular, admin_get_regular, admin_delete_post, \
+    admin_delete_all_posts, handle_video_note
+
 from user_repository import UserRepository
 from user import User
 from PIL import Image
@@ -35,20 +38,23 @@ repo = UserRepository(google_sheets)
 #     'button_workout_2': '🤸‍♀️ Тренировка от целлюлита',
 # }
 WORKOUT_NAMES = {
-    'button_workout_1': '🧘‍♀️ Осанка',
-    'button_workout_2': '🤸‍♀️ Тренировка от целлюлита',
+    'button_workout_1': '🧘‍♀️Осанка',
+    'button_workout_2': '🤸‍♀️Тренировка от отёков',
+    'button_workout_3': '🏋‍♀️Тренировка от холки',
 }
 
 WORKOUT_VIDEOS = {
     'button_workout_1': {
         'telegram': 'BAACAgIAAxkBAANuZvF-GFq8iq-DWsOm4cf1zseJZ4AAAhNcAAL19ZBLZtDGuSFuXBw2BA',  # Путь к видео на Telegram (файл на сервере или ID файла)
-        'youtube': 'https://www.youtube.com/watch?v=PbWnEIp5TME',
-        'vk': 'https://vk.com/video-127960182_456239022'
+        'youtube': 'https://www.youtube.com/watch?v=PbWnEIp5TME'
     },
     'button_workout_2': {
-        'telegram': 'BAACAgIAAxkBAAN5ZvGJvR0iq2XH4uCdrIex3GrhdU0AAjNdAAL19ZBL27_7QL6GIHk2BA',  # Путь к видео на Telegram
-        'youtube': 'https://www.youtube.com/watch?v=qiS3PIPsRhs',
-        'vk': 'https://vk.com/video-127960182_456239022'
+        'telegram': 'BAACAgIAAxkBAAIDWmb2jJ8FqCmrc3FmtwG0bIVal5bBAALBVgACuKmwSyc0BR3YRSJlNgQ',  # Путь к видео на Telegram
+        'youtube': 'https://www.youtube.com/watch?v=YzW3_JWepL0'
+    },
+    'button_workout_3': {
+        'telegram': 'BAACAgIAAxkBAAIBwmb2b2URG4ArqjT681-K8W7X80aYAAJ7VQACuKmwS6zMEZKCEcOINgQ',
+        'youtube': 'https://www.youtube.com/watch?v=vACHY3N-4rA'
     }
 }
 
@@ -98,14 +104,14 @@ async def check_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE)
     is_subscribed = await check_subscription_status(user_id)
 
     if is_subscribed:
-        await query.message.reply_text("Спасибо за подписку! Теперь выберите тренировку:")
         # Отправка кнопок с выбором тренировки
         keyboard = [
             [InlineKeyboardButton(f"{WORKOUT_NAMES['button_workout_1']}", callback_data='button_workout_1')],
             [InlineKeyboardButton(f"{WORKOUT_NAMES['button_workout_2']}", callback_data='button_workout_2')],
+            [InlineKeyboardButton(f"{WORKOUT_NAMES['button_workout_3']}", callback_data='button_workout_3')],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await context.bot.send_message(chat_id=query.message.chat_id, text="Выберите тренировку:", reply_markup=reply_markup)
+        await context.bot.send_message(chat_id=query.message.chat_id, text="Спасибо за подписку! Выберете тренировку:", reply_markup=reply_markup)
     else:
         await query.message.reply_text("Вы еще не подписались на канал. Пожалуйста, подпишитесь и попробуйте снова.")
 
@@ -118,7 +124,6 @@ async def send_workout_options(update: Update, context: ContextTypes.DEFAULT_TYP
     keyboard = [
         [InlineKeyboardButton("Получить видео в Telegram", callback_data=f'telegram_{workout_key}')],
         [InlineKeyboardButton("Получить ссылку на YouTube", callback_data=f'youtube_{workout_key}')],
-        [InlineKeyboardButton("Получить ссылку на ВК", callback_data=f'vk_{workout_key}')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -173,36 +178,13 @@ async def handle_service_selection(update: Update, context: ContextTypes.DEFAULT
             vk_link = workout_data.get('vk')
             if vk_link:
                 await context.bot.send_message(chat_id=query.message.chat_id, text=f"Ссылка на ВК: {vk_link}")
+        await context.bot.send_message(chat_id=query.message.chat_id, text="Если у вас возникнут вопросы по технике, не стесняйтесь обращаться. Буду рада вашей обратной связи \nhttps://t.me/aleksandra_chuprakova")
+        if workout_key == 'button_workout_3':
+            await context.bot.send_message(chat_id=query.message.chat_id,
+                                           text="Для выполнения этой тренировки вам потребуется полотенце или плед")
     else:
         await context.bot.send_message(chat_id=query.message.chat_id, text="Произошла ошибка при выборе тренировки.")
 
-
-# async def send_workout_link(update: Update, context: ContextTypes.DEFAULT_TYPE, workout_key):
-#     query = update.callback_query
-#     user_id = query.from_user.id
-#     workout_link = WORKOUT_VIDEOS.get(workout_key)
-#     if workout_link:
-#         workout_name = WORKOUT_NAMES.get(workout_key, "Неизвестная тренировка")  # Получаем название тренировки из словаря
-#
-#
-#         await context.bot.send_message(chat_id=query.message.chat_id, text=f"Вот ссылка на выбранную тренировку: {workout_link}")
-#
-#         # Редактируем сообщение, заменяя клавиатуру с одной кнопкой выбранной тренировки
-#         if query.message.chat_id in context.user_data and context.user_data[query.message.chat_id]['edited'] is False:
-#             try:
-#                 keyboard = InlineKeyboardMarkup(
-#                     [[InlineKeyboardButton(workout_name, callback_data=f'button_workout_{workout_key.split("_")[1]}')]])
-#                 await context.bot.edit_message_reply_markup(chat_id=query.message.chat_id,
-#                                                             message_id=context.user_data[query.message.chat_id][
-#                                                                 'message_id'],
-#                                                             reply_markup=keyboard)
-#
-#                 # Помечаем сообщение как отредактированное
-#                 context.user_data[query.message.chat_id]['edited'] = True
-#             except Exception as e:
-#                 print(f"Error editing message: {e}")
-#     else:
-#         await context.bot.send_message(chat_id=query.message.chat_id, text="Ссылка на тренировку уже получена")
 
 async def periodic_task(context: ContextTypes.DEFAULT_TYPE):
     await send_regular_posts(context)
@@ -216,6 +198,8 @@ def main():
     application.add_handler(CommandHandler("admin_send", admin_send_message))
     application.add_handler(MessageHandler(filters.PHOTO & filters.User(int(ADMIN_ID)), admin_send_photo))
     application.add_handler(MessageHandler(filters.VIDEO & filters.User(int(ADMIN_ID)), admin_send_video))
+    application.add_handler(MessageHandler(filters.VIDEO_NOTE & filters.User(int(ADMIN_ID)), handle_video_note))
+
     application.add_handler(CallbackQueryHandler(handle_service_selection, pattern='^(telegram|youtube|vk)_'))
 
     application.add_handler(CommandHandler("admin_send_regular", admin_send_regular))

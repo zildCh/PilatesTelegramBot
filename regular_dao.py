@@ -15,7 +15,8 @@ class RegularPostDAO:
                        message TEXT NOT NULL,
                        photo_id TEXT,
                        video_id TEXT,  -- Поле для видео
-                       workout_choice TEXT  -- Новое поле для типа тренировки
+                       workout_choice TEXT,  -- Новое поле для типа тренировки
+                       video_note_id TEXT
                    )
                ''')
 
@@ -37,12 +38,12 @@ class RegularPostDAO:
             else:
                 return []
 
-    def insert_post(self, hours, message, photo_id=None, video_id=None, workout_choice=None):
+    def insert_post(self, hours, message, photo_id=None, video_id=None, workout_choice=None, video_note_id=None):
         with self.conn:
             self.conn.execute('''
-                INSERT INTO series_posts (hours, message, photo_id, video_id, workout_choice)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (hours, message, photo_id, video_id, workout_choice))
+                INSERT INTO series_posts (hours, message, photo_id, video_id, workout_choice,video_note_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (hours, message, photo_id, video_id, workout_choice, video_note_id))
 
     def delete_post(self, post_id):
         with self.conn:

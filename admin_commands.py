@@ -29,7 +29,44 @@ async def admin_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     photo_id = update.message.photo[-1].file_id
     context.user_data['photo_id'] = photo_id  # Сохраняем photo_id в user_data
+    # Очищаем другие типы файлов
+    context.user_data.pop('video_note_id', None)
+    context.user_data.pop('video_id', None)
+
     await update.message.reply_text("Теперь отправьте команду /admin_send с текстом сообщения или команду /admin_send_regular с текстом сообщения и временным интервалом")
+
+
+
+async def admin_send_video_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.message.from_user.id)
+    if user_id != ADMIN_ID:
+        await update.message.reply_text("Вы не являетесь администратором.")
+        return
+
+    if not update.message.video_note:
+        await update.message.reply_text("Пожалуйста, отправьте кружок (видео сообщение).")
+        return
+
+    video_note_id = update.message.video_note.file_id
+    context.user_data['video_note_id'] = video_note_id  # Сохраняем video_note_id в user_data
+    # Очищаем другие типы файлов
+    context.user_data.pop('photo_id', None)
+    context.user_data.pop('video_id', None)
+
+    await update.message.reply_text(f"Теперь отправьте команду /admin_send с текстом сообщения или команду /admin_send_regular с текстом сообщения и временным интервалом")
+
+
+async def handle_video_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Проверяем, что сообщение содержит видео-сообщение (кружок)
+    if update.message.video_note:
+        # Получаем file_id кружка
+        video_note_id = update.message.video_note.file_id
+        await update.message.reply_text(f"Кружок получен! file_id: {video_note_id}")
+
+    video_note_id = update.message.video_note.file_id
+    context.user_data['video_note_id'] = video_note_id  # Сохраняем video_note_id в user_data
+    await update.message.reply_text(f"Теперь отправьте команду /admin_send с текстом сообщения или команду /admin_send_regular с текстом сообщения и временным интервалом")
+
 
 async def admin_send_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
@@ -41,6 +78,10 @@ async def admin_send_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Пожалуйста, отправьте видео.")
         return
 
+
+        # Очищаем другие типы файлов
+    context.user_data.pop('photo_id', None)
+    context.user_data.pop('video_note_id', None)
     video_id = update.message.video.file_id
     context.user_data['video_id'] = video_id  # Сохраняем video_id в user_data
     await update.message.reply_text(f"Теперь отправьте команду /admin_send с текстом сообщения или команду /admin_send_regular с текстом сообщения и временным интервалом. \nfile_id: {video_id}")
@@ -59,7 +100,7 @@ async def send_regular_posts(context: ContextTypes.DEFAULT_TYPE):
 
         start_date = datetime.fromtimestamp(user.start_date)
         hours_since_join = round((now - start_date).total_seconds() // 3600)
-       # hours_since_join = 1  # Для теста. Убрать это в реальной логике[]'4re5748
+        #hours_since_join = 115 # Для теста. Убрать это в реальной логике[]'4re5748
 
         # Получаем все посты для указанного промежутка времени
         series_posts = RegularPostRepo.get_post_for_hours(hours_since_join)
@@ -77,59 +118,23 @@ async def send_regular_posts(context: ContextTypes.DEFAULT_TYPE):
             message = series_post['message']
             photo_id = series_post.get('photo_id')
             video_id = series_post.get('video_id')
-
+            video_note_id = series_post.get('video_note_id')  # Добавляем поле для видео сообщения (кружка)
             try:
-                # Отправляем сообщение в зависимости от наличия фото или видео
+                # Отправляем сообщение в зависимости от наличия фото, видео, или кружка
                 if photo_id:
-                    await context.bot.send_photo(chat_id=user_id, photo=photo_id, caption=message, parse_mode=ParseMode.HTML)
+                    await context.bot.send_photo(chat_id=user_id, photo=photo_id, caption=message,
+                                                 parse_mode=ParseMode.HTML)
                 elif video_id:
-                    await context.bot.send_video(chat_id=user_id, video=video_id, caption=message, parse_mode=ParseMode.HTML)
+                    await context.bot.send_video(chat_id=user_id, video=video_id, caption=message,
+                                                 parse_mode=ParseMode.HTML)
+                elif video_note_id:
+                    await context.bot.send_video_note(chat_id=user_id, video_note=video_note_id)
                 else:
                     await context.bot.send_message(chat_id=user_id, text=message, parse_mode=ParseMode.HTML)
             except Exception as e:
                 print(f"Не удалось отправить сообщение пользователю {user_id}: {e}")
                 UserRepo.update_user_status_to_false(user_id)
 
-# async def send_regular_posts(context: ContextTypes.DEFAULT_TYPE, workout_choice=0):
-#     users = UserRepo.get_all_users()
-#     now = datetime.now()
-#
-#     for user in users:
-#         if workout_choice == 1 and user.workout_choice != '🧘‍♀️ Осанка':
-#             continue
-#         if workout_choice == 2 and user.workout_choice != '🤸‍♀️ Тренировка от целлюлита':
-#             continue
-#
-#         user_id = user.user_id
-#         start_date = datetime.fromtimestamp(user.start_date)
-#         hours_since_join = round((now - start_date).total_seconds() // 3600)
-#         hours_since_join = 1
-#         print(f'User {user_id} joined {hours_since_join} hours ago.')
-#         series_posts = RegularPostRepo.get_post_for_hours(hours_since_join)
-#
-#         if series_posts:
-#             for series_post in series_posts:
-#
-#                 post_workout_choice = series_post.get('workout_choice')  # Добавим поле workout_choice в посты
-#                 if post_workout_choice and post_workout_choice != user.workout_choice:
-#                     continue  # Пропускаем пост, если он не для выбранной тренировки
-#
-#                 message = series_post['message']
-#                 photo_id = series_post.get('photo_id')
-#                 video_id = series_post.get('video_id')
-#
-#                 try:
-#                     if photo_id:
-#                         await context.bot.send_photo(chat_id=user_id, photo=photo_id, caption=message,
-#                                                      parse_mode=ParseMode.HTML)
-#                     elif video_id:
-#                         await context.bot.send_video(chat_id=user_id, video=video_id, caption=message,
-#                                                      parse_mode=ParseMode.HTML)
-#                     else:
-#                         await context.bot.send_message(chat_id=user_id, text=message, parse_mode=ParseMode.HTML)
-#                 except Exception as e:
-#                     print(f"Не удалось отправить сообщение пользователю {user_id}: {e}")
-#                     UserRepo.update_user_status_to_false(user_id)
 
 async def admin_send_regular(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
@@ -137,6 +142,12 @@ async def admin_send_regular(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if user_id != ADMIN_ID:
         await update.message.reply_text("Вы не являетесь администратором.")
         return
+    # Извлекаем полный текст сообщения, обрезая команду `/admin_send_regular `
+    full_message_text = update.message.text[len('/admin_send_regular '):]
+
+    # Разделяем текст по пробелам и извлекаем последние два элемента (часы и выбор аудитории)
+    args = full_message_text.rsplit(' ', 2)
+
 
     if len(context.args) < 3:
         await update.message.reply_text("Пожалуйста, укажите сообщение, через сколько часов его отправлять и целевую аудиторию (0 - всем, 1 - осанка, 2 - целлюлит).")
@@ -145,9 +156,9 @@ async def admin_send_regular(update: Update, context: ContextTypes.DEFAULT_TYPE)
     try:
         hours = int(context.args[-2])
         workout_choice = int(context.args[-1])
-        message = ' '.join(context.args[:-2])
+        message = args[0]
     except ValueError:
-        await update.message.reply_text("Пожалуйста, укажите корректное количество часов и выбор аудитории (0 - всем, 1 - осанка, 2 - целлюлит).")
+        await update.message.reply_text("Пожалуйста, укажите корректное количество часов и выбор аудитории (0 - всем, 1 - осанка, 2 - отёки, 3 - холка).")
         return
 
         # Преобразуем числовой workout_choice в текстовый
@@ -155,12 +166,14 @@ async def admin_send_regular(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if workout_choice == 0:
         workout_choice_text = 'Всем'
     elif workout_choice == 1:
-        workout_choice_text = '🧘‍♀️ Осанка'
+        workout_choice_text = '🧘‍♀️Осанка'
     elif workout_choice == 2:
-        workout_choice_text = '🤸‍♀️ Тренировка от целлюлита'
+        workout_choice_text = '🤸‍♀️Тренировка от отёков'
+    elif workout_choice == 3:
+        workout_choice_text = '🏋‍♀️Тренировка от холки'
     else:
         await update.message.reply_text(
-            "Некорректный выбор аудитории. Допустимые значения: 0 - всем, 1 - осанка, 2 - целлюлит.")
+            "Некорректный выбор аудитории. Допустимые значения: 0 - всем, 1 - осанка, 2 - отёки, 3 - холка.")
         return
 
     context.user_data['regular_message'] = message
@@ -174,6 +187,9 @@ async def admin_send_regular(update: Update, context: ContextTypes.DEFAULT_TYPE)
     elif 'video_id' in context.user_data:
         media_id = context.user_data['video_id']
         RegularPostRepo.insert_post(hours, message, video_id=media_id, workout_choice=workout_choice_text)
+    elif 'video_note_id' in context.user_data:
+        media_id = context.user_data['video_note_id']
+        RegularPostRepo.insert_post(hours, message, video_note_id=media_id, workout_choice=workout_choice_text)
     else:
         RegularPostRepo.insert_post(hours, message, workout_choice=workout_choice_text)
 
