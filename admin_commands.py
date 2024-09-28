@@ -29,6 +29,7 @@ async def admin_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     photo_id = update.message.photo[-1].file_id
     context.user_data['photo_id'] = photo_id  # Сохраняем photo_id в user_data
+    await update.message.reply_text(f"Фото получено! file_id: {photo_id}")
     # Очищаем другие типы файлов
     context.user_data.pop('video_note_id', None)
     context.user_data.pop('video_id', None)
@@ -85,6 +86,10 @@ async def admin_send_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     video_id = update.message.video.file_id
     context.user_data['video_id'] = video_id  # Сохраняем video_id в user_data
     await update.message.reply_text(f"Теперь отправьте команду /admin_send с текстом сообщения или команду /admin_send_regular с текстом сообщения и временным интервалом. \nfile_id: {video_id}")
+
+async def clear_data_command(context: ContextTypes.DEFAULT_TYPE):
+    """Полностью очищает user_data."""
+    context.user_data.clear()
 
 async def send_regular_posts(context: ContextTypes.DEFAULT_TYPE):
     users = UserRepo.get_all_users()

@@ -6,7 +6,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
 import requests
 from admin_commands import admin_send_photo,admin_send_video, admin_send_message, \
     handle_confirmation, send_regular_posts, admin_send_regular, admin_get_regular, admin_delete_post, \
-    admin_delete_all_posts, handle_video_note
+    admin_delete_all_posts, handle_video_note, clear_data_command
 
 from user_repository import UserRepository
 from user import User
@@ -45,15 +45,15 @@ WORKOUT_NAMES = {
 
 WORKOUT_VIDEOS = {
     'button_workout_1': {
-        'telegram': 'BAACAgIAAxkBAANuZvF-GFq8iq-DWsOm4cf1zseJZ4AAAhNcAAL19ZBLZtDGuSFuXBw2BA',  # Путь к видео на Telegram (файл на сервере или ID файла)
+        'telegram': 'BAACAgIAAxkBAAIIP2b36J_3Hs1XJd1vHWp3zYNFegivAALQUAACVJrBS_cwp4SqIuIbNgQ',  # Путь к видео на Telegram (файл на сервере или ID файла)
         'youtube': 'https://www.youtube.com/watch?v=PbWnEIp5TME'
     },
     'button_workout_2': {
-        'telegram': 'BAACAgIAAxkBAAIDWmb2jJ8FqCmrc3FmtwG0bIVal5bBAALBVgACuKmwSyc0BR3YRSJlNgQ',  # Путь к видео на Telegram
+        'telegram': 'BAACAgIAAxkBAAIIPWb36Dx9MZFZCUetXvlNx1DfWdjMAALIUAACVJrBS2kbSOwhwDqANgQ',  # Путь к видео на Telegram
         'youtube': 'https://www.youtube.com/watch?v=YzW3_JWepL0'
     },
     'button_workout_3': {
-        'telegram': 'BAACAgIAAxkBAAIBwmb2b2URG4ArqjT681-K8W7X80aYAAJ7VQACuKmwS6zMEZKCEcOINgQ',
+        'telegram': 'BAACAgIAAxkBAAIIO2b358vABj8Z_5YNnD4Fj1hw5F7tAALBUAACVJrBS6I6NBHNPqyzNgQ',
         'youtube': 'https://www.youtube.com/watch?v=vACHY3N-4rA'
     }
 }
@@ -201,7 +201,7 @@ def main():
     application.add_handler(MessageHandler(filters.VIDEO_NOTE & filters.User(int(ADMIN_ID)), handle_video_note))
 
     application.add_handler(CallbackQueryHandler(handle_service_selection, pattern='^(telegram|youtube|vk)_'))
-
+    application.add_handler(CommandHandler("clear_data", clear_data_command))
     application.add_handler(CommandHandler("admin_send_regular", admin_send_regular))
     application.add_handler(CommandHandler("admin_delete_post", admin_delete_post))
     application.add_handler(CommandHandler("admin_delete_all_posts", admin_delete_all_posts))
