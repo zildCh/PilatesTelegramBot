@@ -20,6 +20,6 @@ A **Telegram bot** designed to offer users a **free workout selection**, collect
 - **python-telegram-bot** 🤖 - Telegram bot framework  
 - **SQLite** 🗄 - Lightweight database  
 - **Docker Compose** 🐳 - Containerized deployment  
-- **Google Sheets API** 📊 (for tracking message status)  
+- **Google Sheets API** 📊
 
 ---
